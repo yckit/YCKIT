@@ -1,0 +1,33 @@
+html{height:100%;}
+table{border-collapse:collapse;}
+body,td,th{font-family:Microsoft Yahei,Tahoma;font-size: 14px;}
+body{background-color: #FFFFFF;word-break:break-word;word-wrap:break-word;color:#000}
+ul {list-style: square;padding: 10px 0 10px 15px;}
+p{margin:0;padding:0}
+.editMode{margin:5px;padding:0px;overflow-y:auto;}
+.editMode img:-moz-broken {-moz-force-broken-image-icon:1;height:24px;width:24px;}
+.editMode table.xhe-border,.editMode table.xhe-border th,.editMode table.xhe-border td{border:1px dotted #d3d3d3;}
+.editMode embed{display:inline-block;border:1px dashed #FF4E4E;}
+.editMode embed[type="application/x-shockwave-flash"]{background:url(../images/editor/flash.gif) center center no-repeat;}
+.editMode embed[type="application/x-mplayer2"]{background:url(../images/editor/wmp.gif) center center no-repeat;}
+.editMode .xhe-paste{position:absolute;left:-1000px;overflow:hidden;width:1px;height:1px;}
+.editMode .xhe-anchor{display:inline-block;background: url(../images/editor/anchor.gif) no-repeat;border: 1px dotted #0000FF;width:16px;height:15px;overflow:hidden;}
+
+.sourceMode{margin:0px;padding:0px;overflow:hidden;height:100%;}
+.sourceMode textarea{border:0px;margin:0px;padding:0px;width:100%;height:100%;overflow-y:auto;font-family:'Courier New',Courier,monospace !important;font-size:10pt;}
+
+.previewMode{margin:5px;padding:0px;}
+
+.showBlocktag p,.showBlocktag h1,.showBlocktag h2,.showBlocktag h3,.showBlocktag h4,.showBlocktag h5,.showBlocktag h6,.showBlocktag pre,.showBlocktag address,.showBlocktag div{background:none no-repeat scroll right top;border:1px dotted gray;}
+.showBlocktag p{background-image:url(../images/editor/tag-p.gif);}
+.showBlocktag h1{background-image:url(../images/editor/tag-h1.gif);}
+.showBlocktag h2{background-image:url(../images/editor/tag-h2.gif);}
+.showBlocktag h3{background-image:url(../images/editor/tag-h3.gif);}
+.showBlocktag h4{background-image:url(../images/editor/tag-h4.gif);}
+.showBlocktag h5{background-image:url(../images/editor/tag-h5.gif);}
+.showBlocktag h6{background-image:url(../images/editor/tag-h6.gif);}
+.showBlocktag pre{background-image:url(../images/editor/tag-pre.gif);}
+.showBlocktag address{background-image:url(../images/editor/tag-address.gif);}
+.showBlocktag div{background-image:url(../images/editor/tag-div.gif);}
+
+.php,.python,.xml,.sql,.css{border-left:3px solid #444;padding:5px 10px}

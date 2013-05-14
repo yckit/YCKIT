@@ -1,0 +1,22 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');;
+if($this->do=='config'){
+	$this->check_access('user_config');
+	$this->template->out('user.config.php');
+}
+if($this->do=='config_update'){
+	$this->check_access('user_config');
+	$array=array();
+	$array['user_front_login']=empty($_POST['user_front_login'])?0:1;
+	$array['user_front_join']=empty($_POST['user_front_join'])?0:1;
+	$array['user_front_join_active']=empty($_POST['user_front_join_active'])?0:1;
+	$array['user_admin_list_size']=empty($_POST['user_admin_list_size'])?9:intval($_POST['user_admin_list_size']);
+	$array['qq']=empty($_POST['qq'])?0:intval($_POST['qq']);
+	$array['qq_appid']=empty($_POST['qq_appid'])?'':trim($_POST['qq_appid']);
+	$array['qq_appkey']=empty($_POST['qq_appkey'])?'':trim($_POST['qq_appkey']);
+	$array['qq_appcallback']=empty($_POST['qq_appcallback'])?'':trim($_POST['qq_appcallback']);
+	$config_value=base64_encode(serialize($array));
+	$this->db->update(DB_PREFIX."config",array('config_value'=>$config_value),"config_type='user'");
+	clear_cache();
+	redirect('?action=user&do=config');
+}

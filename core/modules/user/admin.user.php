@@ -1,0 +1,153 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');
+if($this->do=='list'){
+	$this->check_access('user_list');
+
+	$sql="SELECT * FROM ".DB_PREFIX."user WHERE 1=1";
+	if(!empty($_GET['role_id'])){
+		$sql.=" AND role_id='".$_GET['role_id']."'";
+	}
+	if(isset($_GET['keyword'])){
+		$sql.=" AND (user_login like '%".trim($_GET['keyword'])."%' OR user_nickname like '%".trim($_GET['keyword'])."%')";
+	}
+	if(isset($_GET['status'])){
+		$sql.=" AND user_status=".intval($_GET['status']);
+	}
+	if(!empty($_GET['orderby'])){
+		$orderby=trim($_GET['orderby']);
+	}else{
+		$orderby='user_id';
+	}
+	if(!empty($_GET['sort'])){
+		$sort=trim($_GET['sort']);
+	}else{
+		$sort='DESC';
+	}
+	$sql.=" ORDER BY $orderby $sort";
+	$page_size=$this->config['user_admin_list_size']?$this->config['user_admin_list_size']:20;
+	$page_current=isset($_GET['page'])&&is_numeric($_GET['page'])?intval($_GET['page']):1;
+	$count=$this->db->count($sql);
+	$res=$this->db->result($sql." limit ".(($page_current-1)*$page_size).",".$page_size);
+	$array=array();
+	if($count>0){
+		foreach($res as $row){
+			$array[$row['user_id']]['id']=$row['user_id'];
+			$array[$row['user_id']]['login']=$row['user_login'];
+			$array[$row['user_id']]['nickname']=$row['user_nickname'];
+			$array[$row['user_id']]['point']=number_format($row['user_point']);
+			$array[$row['user_id']]['join_time']=date("Y/m/d",$row['user_join_time']);
+			$array[$row['user_id']]['login_time']=date("Y/m/d H:i:s",$row['user_login_time']);
+			$array[$row['user_id']]['login_ip']=$row['user_login_ip'];
+			$array[$row['user_id']]['status']=$row['user_status'];
+		}
+		$parameter='action=user&do=list&';
+		if(!empty($_GET['role_id'])){
+			$parameter.="role_id='".$_GET['role_id']."'&";
+		}
+		if(isset($_GET['keyword'])){
+			$parameter.="keyword='".trim($_GET['keyword'])."'&";
+		}
+		if(isset($_GET['status'])){
+			$parameter.="user_status='".intval($_GET['status'])."'&";
+		}
+		$pager=pager(get_self(),$parameter,$page_current,$page_size,$count);
+	}else{
+		$pager="";
+	}
+	$this->template->in('user',$array);
+	$this->template->in('pager',$pager);
+	$this->template->out('user.list.php');
+}
+if($this->do=='add'){#内容添加
+	$this->check_access('user_add');
+	$array=array();
+	$array['login']='';
+	$array['point']=0;
+	$array['status']=1;
+	$this->template->in('user',$array);
+	$this->template->in('role',$user->get_role());
+	$this->template->in('mode','insert');
+	$this->template->out('user.info.php');
+}
+if($this->do=='insert'){#内容插入
+	$this->check_access('user_add');
+	$user_login=empty($_POST['user_login'])?'':strtolower(trim(addslashes($_POST['user_login'])));
+	$user_nickname=empty($_POST['user_nickname'])?'':trim(addslashes($_POST['user_nickname']));
+	$user_key=empty($_POST['user_key'])?'':md5(trim($_POST['user_key']));
+	$user_point=empty($_POST['user_point'])?0:intval($_POST['user_point']);
+	$user_status=empty($_POST['user_status'])?0:1;
+	$role_id=empty($_POST['role_id'])?0:intval($_POST['role_id']);
+	if($user_login==''){
+		alert('帐号不能为空');
+	}
+	if($user_key==''){
+		alert('密码不能为空');
+	}
+	if($user_nickname==''){
+		alert('昵称不能为空');
+	}
+	$array=array();
+	$array['user_login']=$user_login;
+	$array['user_key']=$user_key;
+	$array['user_nickname']=$user_nickname;
+	$array['user_point']=$user_point;
+	$array['user_status']=$user_status;
+	$array['role_id']=$role_id;
+	$array['user_join_time']=$_SERVER['REQUEST_TIME'];
+	$array['user_login_time']=$_SERVER['REQUEST_TIME'];
+	$array['user_login_ip']=get_ip();
+	$this->db->insert(DB_PREFIX."user",$array);
+	redirect('?action=user&do=list');
+}
+//编辑内容
+if($this->do=='edit'){
+	$this->check_access('user_edit');
+	$user_id=empty($_GET['user_id'])?0:intval($_GET['user_id']);
+	$row=$this->db->row("SELECT * FROM ".DB_PREFIX."user WHERE user_id='".$user_id."'");
+	$array=array();
+	$array['id']=$row['user_id'];
+	$array['login']=$row['user_login'];
+	$array['point']=$row['user_point'];
+	$array['nickname']=$row['user_nickname'];
+	$array['status']=$row['user_status'];
+	$array['role_id']=$row['role_id'];
+	$this->template->in('user',$array);
+	$this->template->in('role',$user->get_role());
+	$this->template->in('mode','update');
+	$this->template->out('user.info.php');
+}
+//更新内容
+if($this->do=='update'){
+	$this->check_access('user_edit');
+	$user_id=empty($_POST['user_id'])?0:intval($_POST['user_id']);
+	$user_key=empty($_POST['user_key'])?'':md5(trim($_POST['user_key']));
+	$user_nickname=empty($_POST['user_nickname'])?'':trim(addslashes($_POST['user_nickname']));
+	$user_point=empty($_POST['user_point'])?0:intval($_POST['user_point']);
+	$user_status=empty($_POST['user_status'])?0:1;
+	$role_id=empty($_POST['role_id'])?0:intval($_POST['role_id']);
+	if($user_nickname==''){
+		alert('昵称不能为空');
+	}
+	$array=array();
+	if(!empty($user_key)){
+		$array['user_key']=$user_key;
+	}
+	$array['user_nickname']=$user_nickname;
+	$array['user_point']=$user_point;
+	$array['role_id']=$role_id;
+	$array['user_status']=$user_status;
+	$this->db->update(DB_PREFIX."user",$array,"user_id=$user_id");
+	redirect('?action=user&do=list');
+}
+if($this->do=='delete'){#删除内容
+	$this->check_access('user_delete');
+	$user_id=empty($_POST['user_id'])?array():$_POST['user_id'];
+	foreach($user_id as $id){
+		if(!empty($id)){
+			@unlink("data/user/".$id."jpg");
+			$this->db->delete(DB_PREFIX."user","user_id=".$id."");
+			$this->db->delete(DB_PREFIX."user_active","user_id=".$id."");
+		}
+	}
+	redirect('?action=user&do=list');
+}

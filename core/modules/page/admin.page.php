@@ -1,0 +1,186 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');
+if($this->do=='list'){
+	$this->check_access('page_list');
+	$sql="SELECT * FROM ".DB_PREFIX."page ORDER BY page_id DESC";
+	$page_size=20;
+	$page_current=isset($_GET['page'])&&is_numeric($_GET['page'])?intval($_GET['page']):1;
+	$count=$this->db->count($sql);
+	$res=$this->db->result($sql." limit ".(($page_current-1)*$page_size).",".$page_size);
+	$array=array();
+	if($count>0){
+		foreach($res as $row){
+			$array[$row['page_id']]['id']=$row['page_id'];
+			$array[$row['page_id']]['title']=$row['page_title'];
+			$array[$row['page_id']]['keywords']=$row['page_keywords'];
+			$array[$row['page_id']]['description']=$row['page_description'];
+			$array[$row['page_id']]['html']=$row['page_html'];
+			$array[$row['page_id']]['is_comment']=$row['page_is_comment'];
+			$array[$row['page_id']]['is_display']=$row['page_is_display'];
+		}
+		$parameter='action=page&do=list&';
+		$pager=pager(get_self(),$parameter,$page_current,$page_size,$count);
+	}else{
+		$pager="";
+	}
+	$this->template->in('page',$array);
+	$this->template->in('pager',$pager);
+	$this->template->out('page.list.php');
+}
+if($this->do=='page_add'){
+	$this->check_access('page_list');
+	$array=array();
+	$array['id']=0;
+	$array['title']='';
+	$array['keywords']='';
+	$array['description']='';
+	$array['content_mode']=0;
+	$array['content']='';
+	$array['sort']=0;
+	$array['html']='page-'.(intval($this->db->value(DB_PREFIX."page","max(page_id)","1=1 ORDER BY page_id DESC"))+1);
+	$array['is_comment']=1;
+	$array['is_display']=1;
+	$this->template->in('page',$array);
+	$this->template->in('mode','insert');
+	$this->template->out('page.info.php');
+}
+if($this->do=='page_insert'){
+	$this->check_access('page_list');
+	$page_title=empty($_POST['page_title'])?'':trim(addslashes($_POST['page_title']));
+	$page_keywords=empty($_POST['page_keywords'])?'':trim(addslashes($_POST['page_keywords']));
+	$page_description=empty($_POST['page_description'])?'':trim(addslashes($_POST['page_description']));
+	$page_content_mode=empty($_POST['page_content_mode'])?0:1;
+	$page_content=empty($_POST['page_content'])?'':trim(addslashes($_POST['page_content']));
+	$page_file=empty($_POST['page_file'])?'':trim(addslashes($_POST['page_file']));
+	$page_sort=empty($_POST['page_sort'])?0:intval($_POST['page_sort']);
+	$page_html=empty($_POST['page_html'])?'':trim(addslashes($_POST['page_html']));
+
+	$page_is_comment=empty($_POST['page_is_comment'])?0:1;
+	$page_is_display=empty($_POST['page_is_display'])?0:1;
+	if($page_title==''){
+		alert('标题不能为空');
+	}
+	if($page_content==''){
+		alert('内容不能为空');
+	}
+	$array=array();
+	$array['page_title']=$page_title;
+	$array['page_keywords']=$page_keywords;
+	$array['page_description']=$page_description;
+	$array['page_content_mode']=$page_content_mode;
+	$array['page_content']=$page_content;
+	$array['page_file']=$page_file;
+	$array['page_sort']=$page_sort;
+	$array['page_html']=$page_html;
+	$array['page_is_comment']=$page_is_comment;
+	$array['page_is_display']=$page_is_display;
+	$this->db->insert(DB_PREFIX."page",$array);
+	$page_id=$this->db->id();
+	if(!empty($_POST['into_menu'])){
+		$array=array();
+		$array['menu_name']=$page_title;
+		$array['menu_link']=PATH.$page_html.".html";
+		$array['menu_description']='';
+		$array['menu_target']=0;
+		$array['menu_sort']=$this->db->count("SELECT COUNT(*) from ".DB_PREFIX."menu")+1;
+		$array['menu_status']=$page_is_display;
+		$array['parent_id']=0;
+		$this->db->insert(DB_PREFIX."menu",$array);
+	}
+	if($page_is_display==1){
+		$page->html_page($page_id);
+	}else{
+		@unlink($page_html.'.html');
+	}
+	redirect('?action=page&do=list');
+}
+if($this->do=='page_edit'){
+	$this->check_access('page_list');
+	$page_id=empty($_GET['page_id'])?0:intval($_GET['page_id']);
+	$row=$this->db->row("SELECT * FROM ".DB_PREFIX."page WHERE page_id='".$page_id."'");
+	$array=array();
+	$array['id']=$page_id;
+	$array['title']=$row['page_title'];
+	$array['keywords']=$row['page_keywords'];
+	$array['description']=$row['page_description'];
+	$array['content_mode']=$row['page_content_mode'];
+	$array['content']=$row['page_content'];
+	$array['sort']=$row['page_sort'];
+	$array['html']=$row['page_html'];
+	$array['is_comment']=$row['page_is_comment'];
+	$array['is_display']=$row['page_is_display'];
+	$this->template->in('page',$array);
+	$this->template->in('mode','update');
+	$this->template->out('page.info.php');
+}
+if($this->do=='page_update'){
+	$this->check_access('page_list');
+	$page_id=empty($_POST['page_id'])?0:intval($_POST['page_id']);
+	$page_title=empty($_POST['page_title'])?'':trim(addslashes($_POST['page_title']));
+	$page_keywords=empty($_POST['page_keywords'])?'':trim(addslashes($_POST['page_keywords']));
+	$page_description=empty($_POST['page_description'])?'':trim(addslashes($_POST['page_description']));
+	$page_content_mode=empty($_POST['page_content_mode'])?0:1;
+	$page_content=empty($_POST['page_content'])?'':trim(addslashes($_POST['page_content']));
+	$page_file=empty($_POST['page_file'])?'':trim(addslashes($_POST['page_file']));
+	$page_sort=empty($_POST['page_sort'])?0:intval($_POST['page_sort']);
+	$page_html=empty($_POST['page_html'])?'':trim(addslashes($_POST['page_html']));
+	$page_html_old=empty($_POST['page_html_old'])?'':trim(addslashes($_POST['page_html_old']));
+	$page_is_comment=empty($_POST['page_is_comment'])?0:1;
+	$page_is_display=empty($_POST['page_is_display'])?0:1;
+	if($page_title==''){
+		alert('标题不能为空');
+	}
+	if($page_content==''){
+		alert('内容不能为空');
+	}
+	#要是生成文件名被修改则删除旧文件
+	if($page_html_old!=$page_html){
+		@unlink(ROOT.'/'.$page_html_old);
+	}
+	$array=array();
+	$array['page_title']=$page_title;
+	$array['page_keywords']=$page_keywords;
+	$array['page_description']=$page_description;
+	$array['page_content_mode']=$page_content_mode;
+	$array['page_content']=$page_content;
+	$array['page_file']=$page_file;
+	$array['page_sort']=$page_sort;
+	$array['page_html']=$page_html;
+	$array['page_is_comment']=$page_is_comment;
+	$array['page_is_display']=$page_is_display;
+	$this->db->update(DB_PREFIX."page",$array,"page_id=$page_id");
+	if($page_is_display==1){
+		$page->html_page($page_id);
+	}else{
+		@unlink($page_html.'.html');
+	}
+	redirect('?action=page&do=list');
+}
+if($this->do=='page_delete'){
+	$this->check_access('page_list');
+	$page_id=empty($_GET['page_id'])?0:intval($_GET['page_id']);
+	$page_html=$this->db->value(DB_PREFIX."page","page_html","page_id=$page_id");
+	if(!empty($page_html)&&file_exists($page_html.'.html')){
+		@unlink($page_html.'.html');
+	}
+	$this->db->delete(DB_PREFIX."page_comment","page_id=".$page_id."");
+	$this->db->delete(DB_PREFIX."page","page_id=".$page_id."");
+	redirect('?action=page&do=list');
+}
+if($this->do=='page_html'){
+	$page_id=empty($_POST['page_id'])?array():$_POST['page_id'];
+	foreach($page_id as $id){
+		if(!empty($id)){
+			$page->html_page($id);
+		}
+	}
+	redirect('?action=page&do=list');
+}
+if($this->do=='delete_file'){
+	$this->check_access('page_list');
+	$filename=empty($_GET['filename'])?'':trim($_GET['filename']);
+	if(file_exists(ROOT.$filename)){
+		@unlink(ROOT.$filename);
+	}
+	exit;
+}

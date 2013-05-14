@@ -1,0 +1,112 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');
+if($this->do=='menu'){
+	$this->check_access('global_menu');
+	$array=array();
+	$result=$this->db->result("SELECT * FROM ".DB_PREFIX."menu WHERE parent_id=0 ORDER BY menu_sort ASC");
+	if($result){
+		foreach($result as $row){
+			$array[$row['menu_id']]['id']=$row['menu_id'];
+			$array[$row['menu_id']]['name']=$row['menu_name'];
+			$array[$row['menu_id']]['description']=$row['menu_description'];
+			$array[$row['menu_id']]['target']=$row['menu_target'];
+			$array[$row['menu_id']]['link']=$row['menu_link'];
+			$array[$row['menu_id']]['sort']=$row['menu_sort'];
+			$array[$row['menu_id']]['status']=$row['menu_status'];
+			$children=array();
+			$children_result=$this->db->result("SELECT * FROM ".DB_PREFIX."menu WHERE parent_id=".$row['menu_id']." ORDER BY menu_sort ASC");
+			if($children_result){
+				foreach($children_result as $child){
+					$children[$child['menu_id']]['id']=$child['menu_id'];
+					$children[$child['menu_id']]['name']=$child['menu_name'];
+					$children[$child['menu_id']]['description']=$child['menu_description'];
+					$children[$child['menu_id']]['link']=$child['menu_link'];
+					$children[$child['menu_id']]['target']=$child['menu_target'];
+					$children[$child['menu_id']]['status']=$child['menu_status'];
+				}
+			}
+			$array[$row['menu_id']]['children']=$children;
+		}
+	}
+	$this->template->in('menu',$array);
+	$this->template->out('global.menu.list.php');
+}
+if($this->do=='menu_add'){#管理员添加
+	$menu=array();
+	$menu['id']=0;
+	$menu['name']='';
+	$menu['description']='';
+	$menu['target']=0;
+	$menu['link']='';
+	$menu['sort']=0;
+	$menu['status']=1;
+	$menu['parent_id']=0;
+	$this->template->in('menu',$menu);
+	$this->template->in('parent_menu',$global->get_menu());
+	$this->template->in('mode','insert');
+	$this->template->out('global.menu.info.php');
+}
+if($this->do=='menu_insert'){#管理员插入
+	$this->check_access('global_menu');
+	$menu_name=empty($_POST['menu_name'])?'':addslashes(trim($_POST['menu_name']));
+	$menu_description=empty($_POST['menu_description'])?'':addslashes(trim($_POST['menu_description']));
+	$menu_target=intval($_POST['menu_target']);
+	$menu_link=empty($_POST['menu_link'])?'':addslashes(trim($_POST['menu_link']));
+	$menu_sort=intval($_POST['menu_sort']);
+	$menu_status=intval($_POST['menu_status']);
+	$parent_id=intval($_POST['parent_id']);
+	$array=array();
+	$array['menu_name']=$menu_name;
+	$array['menu_link']=$menu_link;
+	$array['menu_description']=$menu_description;
+	$array['menu_target']=$menu_target;
+	$array['menu_sort']=$menu_sort;
+	$array['menu_status']=$menu_status;
+	$array['parent_id']=$parent_id;
+	$this->db->insert(DB_PREFIX."menu",$array);
+	redirect('?action=global&do=menu');
+}
+if($this->do=='menu_edit'){
+	$menu_id=empty($_GET['menu_id'])?'':intval($_GET['menu_id']);
+	$row=$this->db->row("SELECT * FROM ".DB_PREFIX."menu WHERE menu_id='$menu_id'");
+	$menu=array();
+	$menu['id']=$row['menu_id'];
+	$menu['name']=$row['menu_name'];
+	$menu['description']=$row['menu_description'];
+	$menu['target']=$row['menu_target'];
+	$menu['link']=$row['menu_link'];
+	$menu['sort']=$row['menu_sort'];
+	$menu['status']=$row['menu_status'];
+	$menu['parent_id']=$row['parent_id'];
+	$this->template->in('menu',$menu);
+	$this->template->in('parent_menu',$global->get_menu());
+	$this->template->in('mode','update');
+	$this->template->out('global.menu.info.php');
+}
+if($this->do=='menu_update'){
+	$this->check_access('global_menu');
+	$menu_id=empty($_POST['menu_id'])?'':intval($_POST['menu_id']);
+	$menu_name=empty($_POST['menu_name'])?'':addslashes(trim($_POST['menu_name']));
+	$menu_description=empty($_POST['menu_description'])?'':addslashes(trim($_POST['menu_description']));
+	$menu_target=intval($_POST['menu_target']);
+	$menu_link=empty($_POST['menu_link'])?'':addslashes(trim($_POST['menu_link']));
+	$menu_sort=intval($_POST['menu_sort']);
+	$menu_status=intval($_POST['menu_status']);
+	$parent_id=intval($_POST['parent_id']);
+	$array=array();
+	$array['menu_name']=$menu_name;
+	$array['menu_description']=$menu_description;
+	$array['menu_target']=$menu_target;
+	$array['menu_link']=$menu_link;
+	$array['menu_sort']=$menu_sort;
+	$array['menu_status']=$menu_status;
+	$array['parent_id']=$parent_id;
+	$this->db->update(DB_PREFIX."menu",$array,"menu_id=$menu_id");
+	redirect('?action=global&do=menu');
+}
+if($this->do=='menu_delete'){
+	$this->check_access('global_menu');
+	$menu_id=empty($_GET['menu_id'])?'':intval($_GET['menu_id']);
+	$this->db->delete(DB_PREFIX."menu","menu_id=$menu_id");
+	redirect('?action=global&do=menu');
+}

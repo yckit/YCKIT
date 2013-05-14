@@ -1,0 +1,44 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');
+if($this->do=='module'){
+	$this->check_access('global_module');
+	$array=array();
+	if($handle=opendir("core/modules/")){
+		while(false!==($dir=readdir($handle))){
+			if ($dir!="."&&$dir!=".."&&is_dir(ROOT.'/core/modules/'.$dir)){
+				$info=@include(ROOT.'/core/modules/'.$dir.'/info.php');
+				if(!empty($info)){
+					$info['install']=in_array($dir,$this->get_modules());
+					$info['dir']=$dir;
+					$array[]=$info;
+				}
+			}
+		}
+		closedir($handle);
+	}
+
+	$this->template->in("module_list",$array);
+	$this->template->out('global.module.php');
+}
+if($this->do=='module_install'){
+	$this->check_access('global_module');
+	$dir=empty($_GET['dir'])?'':trim($_GET['dir']);
+	$file=ROOT.'/core/modules/'.$dir.'/install.php';
+	if(is_file($file))include($file);
+	$modules=$this->get_modules();
+	$modules[]=$dir;
+	$modules=implode("|",$modules);
+ 	$this->db->update(DB_PREFIX."config","config_value='".$modules."'","config_type='modules'");
+	clear_cache();
+}
+if($this->do=='module_uninstall'){
+	$this->check_access('global_module');
+	$dir=empty($_GET['dir'])?'':trim($_GET['dir']);
+ 	$file=ROOT.'/core/modules/'.$dir.'/uninstall.php';
+ 	if(is_file($file))include($file);
+ 	$modules=$this->get_modules();
+ 	$modules=array_diff($modules,array($dir));
+ 	$modules=implode("|",$modules);
+ 	$this->db->update(DB_PREFIX."config","config_value='".$modules."'","config_type='modules'");
+	clear_cache();
+}

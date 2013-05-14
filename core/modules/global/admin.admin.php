@@ -1,0 +1,92 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');
+if($this->do=='admin'){
+	$this->check_access('global_admin');
+	$array=array();
+	$res=$this->db->result("SELECT * FROM ".DB_PREFIX."admin ORDER BY admin_id ASC");
+	if($res){
+		foreach($res as $row){
+			$array[$row['admin_id']]['id']=$row['admin_id'];
+			$array[$row['admin_id']]['name']=$row['admin_name'];
+			$array[$row['admin_id']]['type']=$row['admin_type'];
+			$array[$row['admin_id']]['password']=$row['admin_password'];
+			$array[$row['admin_id']]['login_time']=$row['admin_login_time'];
+			$array[$row['admin_id']]['last_time']=date('Y-m-d H:i',$row['admin_last_time']);
+			$array[$row['admin_id']]['last_ip']=$row['admin_last_ip'];
+			$array[$row['admin_id']]['status']=$row['admin_status'];
+		}
+	}
+	$this->template->in('admin',$array);
+	$this->template->out('global.admin.list.php');
+}
+if($this->do=='admin_add'){#管理员添加
+	$admin=array();
+	$admin['id']=0;
+	$admin['name']='';
+	$admin['password']='';
+	$admin['type']=0;
+	$admin['status']=1;
+	$this->template->in('access',$this->get_modules_access());
+	$this->template->in('admin',$admin);
+	$this->template->in('mode','insert');
+	$this->template->out('global.admin.info.php');
+}
+if($this->do=='admin_insert'){#管理员插入
+	$this->check_access('global_admin');
+	$admin_name=empty($_POST['admin_name'])?'':addslashes(trim($_POST['admin_name']));
+	$admin_password=empty($_POST['admin_password'])?'':addslashes(trim($_POST['admin_password']));
+	$admin_access_parent=isset($_POST['admin_access_parent'])?$_POST['admin_access_parent']:array();
+	$admin_access=isset($_POST['admin_access'])?$_POST['admin_access']:array();
+	$admin_type=intval($_POST['admin_type']);
+	$admin_status=intval($_POST['admin_status']);
+	$access=implode(",",$admin_access_parent)."|".implode(",",$admin_access);
+	$array=array();
+	$array['admin_name']=$admin_name;
+	$array['admin_password']=md5($admin_password);
+	$array['admin_type']=$admin_type;
+	$array['admin_access']=$access;
+	$array['admin_status']=$admin_status;
+	$this->db->insert(DB_PREFIX."admin",$array);
+	redirect('?action=global&do=admin');
+}
+if($this->do=='admin_edit'){#管理员编辑
+	$admin_id=empty($_GET['admin_id'])?'':intval($_GET['admin_id']);
+	$row=$this->db->row("SELECT * FROM ".DB_PREFIX."admin WHERE admin_id='$admin_id'");
+	$admin=array();
+	$admin['id']=$row['admin_id'];
+	$admin['name']=$row['admin_name'];
+	$admin['type']=$row['admin_type'];
+	$admin['access']=$row['admin_access'];
+	$admin['status']=$row['admin_status'];
+	$this->template->in('access',$this->get_modules_access());
+	$this->template->in('admin',$admin);
+	$this->template->in('mode','update');
+	$this->template->out('global.admin.info.php');
+}
+if($this->do=='admin_update'){#管理员更新
+	$this->check_access('global_admin');
+	$admin_id=empty($_POST['admin_id'])?'':intval($_POST['admin_id']);
+	$admin_name=empty($_POST['admin_name'])?'':addslashes(trim($_POST['admin_name']));
+	$admin_password=empty($_POST['admin_password'])?'':addslashes(trim($_POST['admin_password']));
+	$admin_access_parent=isset($_POST['admin_access_parent'])?$_POST['admin_access_parent']:array();
+	$admin_access=isset($_POST['admin_access'])?$_POST['admin_access']:array();
+	$admin_type=intval($_POST['admin_type']);
+	$admin_status=intval($_POST['admin_status']);
+	$access=implode(",",$admin_access_parent)."|".implode(",",$admin_access);
+	$array=array();
+	$array['admin_name']=$admin_name;
+	if(!empty($admin_password)){
+		$array['admin_password']=md5($admin_password);
+	}
+	$array['admin_type']=$admin_type;
+	$array['admin_access']=$access;
+	$array['admin_status']=$admin_status;
+	$this->db->update(DB_PREFIX."admin",$array,"admin_id=$admin_id");
+	redirect('?action=global&do=admin');
+}
+if($this->do=='admin_delete'){#管理员删除
+	$this->check_access('global_admin');
+	$admin_id=empty($_GET['admin_id'])?'':intval($_GET['admin_id']);
+	$this->db->delete(DB_PREFIX."admin","admin_id=$admin_id");
+	redirect('?action=global&do=admin');
+}

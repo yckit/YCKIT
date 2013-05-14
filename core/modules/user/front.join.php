@@ -1,0 +1,84 @@
+<?php
+if(!defined('ROOT'))exit('Access denied!');
+if($this->do=='join'){
+	check_request();
+	$this->template->template_dir='core/modules/user/templates/front';
+	$this->template->out("user.join.php");
+}
+if($this->do=='join-check'){
+	check_request();
+	$user_login=empty($_POST['user_login'])?'':trim(addslashes($_POST['user_login']));
+	$user_key=empty($_POST['user_key'])?'':md5($_POST['user_key']);
+	$user_key_confirm=empty($_POST['user_key_confirm'])?'':md5($_POST['user_key_confirm']);
+	$user_nickname=empty($_POST['user_nickname'])?'':trim(addslashes($_POST['user_nickname']));
+	if(empty($user_login)){
+		exit('帐号不能为空');
+	}
+	if(!is_email($user_login)){
+		exit('帐号不合法');
+	}
+	if($this->db->repeat(DB_PREFIX."user",'user_login',$user_login)){
+		exit('帐号已存在');
+	}
+	if(empty($user_key)){
+		exit('密码不能为空');
+	}
+	if($user_key!==$user_key_confirm){
+		exit('两次输入的密码不相同');
+	}
+	if(empty($user_nickname)){
+		exit('昵称不能为空');
+	}
+	if($this->db->repeat(DB_PREFIX."user",'user_nickname',$user_nickname)){
+		exit('昵称已存在');
+	}
+	$array=array();
+	$array['user_login']=$user_login;
+	$array['user_key']=$user_key;
+	$array['user_nickname']=$user_nickname;
+	$array['user_join_time']=$_SERVER['REQUEST_TIME'];
+	$array['role_id']=0;
+	if(isset($_SESSION['qq_openid'])){
+		$array['open_id']=$_SESSION['qq_openid'];
+	}
+	if($this->config['user_front_join_active']==1){
+		$array['user_status']=0;
+	}else{
+		$array['user_status']=1;
+	}
+	$this->db->insert(DB_PREFIX."user",$array);
+	$insert_id=$this->db->id();
+	if(isset($_SESSION['qq_avatar'])){
+		$user->qq_avatar($insert_id);
+	}
+	if($this->config['user_front_join_active']==0){
+		$_SESSION['user_id']=$insert_id;
+		$_SESSION['user_login']=$user_login;
+		$_SESSION['user_nickname']=$user_nickname;
+		$_SESSION['role_id']=0;
+		if(isset($_SESSION['qq_openid'])){
+			$_SESSION['open_id']=$_SESSION['qq_openid'];
+		}
+		exit('LOGIN');
+	}else{
+		$active_value=md5($user_login.$user_key);
+		$active=array();
+		$active['active_value']=$active_value;
+		$active['user_id']=$insert_id;
+		$this->db->insert(DB_PREFIX."user_active",$active);
+		$subject=iconv('UTF-8','GB2312',$this->config['title']."提醒您：请激活您的帐号！");
+		$content=iconv('UTF-8','GB2312','<a href="http://'.$_SERVER['SERVER_NAME'].PATH.'#active:'.$active_value.'">激活帐号</a>');
+		import('smtp');
+		$smtp=new smtp(
+			$this->config['smtp_server'],
+			$this->config['smtp_port'],
+			true,
+			$this->config['smtp_user'],
+			$this->config['smtp_password']
+		);
+		if($smtp->send($user_login,$this->config['smtp_mail'],$subject,$content,'HTML')){
+ 			exit('ACTIVE');
+		}
+		
+	}
+}

@@ -1,0 +1,8 @@
+.crop-holder{text-align: left;}
+.crop-vline,.crop-hline{font-size: 0;position: absolute;background:white url('../images/crop.gif') top left repeat;}
+.crop-vline{height: 100%; width: 1px !important;}
+.crop-hline{width: 100%; height: 1px !important;}
+.crop-handle{font-size: 1px;width: 7px !important;height: 7px !important;border: 1px #eee solid;background-color:#333;*width: 9px;*height: 9px;}
+.crop-tracker{width: 100%; height: 100%;}
+.custom .crop-vline,.custom .crop-hline{background:yellow;}
+.custom .crop-handle{border-color: black;background-color: #C7BB00;-moz-border-radius:3px;-webkit-border-radius: 3px;}
