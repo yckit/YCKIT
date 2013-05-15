@@ -484,7 +484,8 @@ if(!class_exists('content_class')){
 			return $array;
 		}
 		function get_fields($category_id,$article_id){
-			$result=$this->db->result("SELECT a.field_name,a.field_text,b.data_value FROM ".DB_PREFIX."content_field AS a LEFT JOIN ".DB_PREFIX."content_field_data AS b ON a.category_id='$category_id' AND a.field_status=1 AND a.field_id=b.field_id AND b.article_id=$article_id");
+			$sql="SELECT a.field_name,a.field_text,b.data_value FROM ".DB_PREFIX."content_field AS a,".DB_PREFIX."content_field_data AS b WHERE a.category_id='$category_id' AND a.field_status=1 AND a.field_id=b.field_id AND b.article_id=$article_id";
+			$result=$this->db->result($sql);
 			$array=array();
 			foreach($result as $row){
 				$array[$row['field_name']]=array(
